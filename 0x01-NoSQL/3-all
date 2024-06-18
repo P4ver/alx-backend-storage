@@ -1,0 +1,3 @@
+// list all doc in the colleciton school
+
+db.school.find();
