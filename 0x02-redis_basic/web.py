@@ -1,19 +1,37 @@
 #!/usr/bin/env python3
 """
-Web file
+Web file module
 """
+
 import requests
 import redis
 from functools import wraps
+from typing import Callable
 
 cache_instance = redis.Redis()
+"""The module-level Redis instance for caching and tracking URL access."""
 
 
-def track_url_access(func):
-    """ Decorator counting how many times
-    a URL is accessed """
+def track_url_access(func: Callable[[str], str]) -> Callable[[str], str]:
+    """Decorator that counts how many times a URL
+    is accessed and caches the result.
+
+    Args:
+        func (Callable[[str], str]): The function to wrap.
+
+    Returns:
+        Callable[[str], str]: The wrapped function.
+    """
     @wraps(func)
-    def wrapper(url):
+    def wrapper(url: str) -> str:
+        """Wrapper function for caching the output and counting accesses.
+
+        Args:
+            url (str): The URL to fetch.
+
+        Returns:
+            str: The HTML content of the URL.
+        """
         cache_key = "cached:" + url
         cached_content = cache_instance.get(cache_key)
         if cached_content:
@@ -31,6 +49,13 @@ def track_url_access(func):
 
 @track_url_access
 def fetch_page(url: str) -> str:
-    """ Returns HTML content of a URL """
+    """Fetches and returns the HTML content of a URL.
+
+    Args:
+        url (str): The URL to fetch.
+
+    Returns:
+        str: The HTML content of the URL.
+    """
     response = requests.get(url)
     return response.text
