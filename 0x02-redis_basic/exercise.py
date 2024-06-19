@@ -24,20 +24,17 @@ def replay(func: Callable):
         print(f"{func_name}(*{input_val}) -> {output_val}")
 
 
-def call_history(func: Callable) -> Callable:
-    """ Call history. """
-    func_name = func.__qualname__
-    inputs_key = "".join([func_name, ":inputs"])
-    outputs_key = "".join([func_name, ":outputs"])
-
-    @wraps(func)
-    def wrapper(self, *args, **kwargs):
-        """ Wrapper """
-        self._redis.rpush(inputs_key, str(args))
-        result = func(self, *args, **kwargs)
-        self._redis.rpush(outputs_key, str(result))
-        return result
-    return wrapper
+def count_calls(method: Callable) -> Callable:
+    '''Tracks the number of calls made to a method in a Cache class.
+    '''
+    @wraps(method)
+    def invoker(self, *args, **kwargs) -> Any:
+        '''Invokes the given method after incrementing its call counter.
+        '''
+        if isinstance(self._redis, redis.Redis):
+            self._redis.incr(method.__qualname__)
+        return method(self, *args, **kwargs)
+    return invoker
 
 
 def count_calls(func: Callable) -> Callable:
